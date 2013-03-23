@@ -1,0 +1,67 @@
+.syntax unified
+.cpu cortex-m4
+.fpu softvfp
+.thumb
+
+.global ctx_switch
+.global sched_switch_context_exit
+.global SVC_Handler
+
+.section .text.SVC_Handler
+  .type  SVC_Handler, %function
+SVC_Handler:
+	push {r4-r11,LR}
+	/* save user mode stack pointer in *sched_thread */
+	ldr     r1, =sched_thread
+	/* r1 = &sched_thread */
+	ldr     r1, [r1]
+	/* r1 = *r1 = sched_thread */
+	str     sp, [r1]
+
+	bl sched_run
+
+	ldr     r0, =sched_thread      /* r0 = &sched_thread */
+	ldr     r0, [r0]                /* r0 = *r0 = sched_thread */
+	ldr     sp, [r0]                /* sp = r0  restore stack pointer*/
+	pop		{r4-r11}
+	pop		{pc}
+.size  SVC_Handler, .-SVC_Handler
+
+.section .text.ctx_switch,"ax",%progbits
+
+ /* kernel functions */
+ctx_switch:
+    /* Save return address on stack */
+    /* stmfd   sp!, {lr} */
+
+    /* disable interrupts */
+    /* mov     lr, #NOINT|SVCMODE */
+    /* msr     CPSR_c, lr */
+	/* cpsid 	i */
+
+ctx_switch2:
+    /* save other register */
+    nop
+
+    mov r12, sp
+    stmfd r12!, {r4-r11}
+
+    /* save user mode stack pointer in *sched_thread */
+    ldr     r1, =sched_thread   /* r1 = &sched_thread */
+    ldr     r1, [r1]                /* r1 = *r1 = sched_thread */
+    str     r12, [r1]                /* store stack pointer in tasks pdc*/
+
+    /* call scheduler so sched_thread points to the next task */
+sched_switch_context_exit:
+    bl      sched_run
+sched_task_return:
+    /* load pdc->stackpointer in r0 */
+    ldr     r0, =sched_thread          /* r0 = &sched_thread */
+    ldr     r0, [r0]                /* r0 = *r0 = sched_thread */
+    ldr     sp, [r0]                /* sp = r0  restore stack pointer*/
+    pop		{r4-r11}
+    pop		{r4}					/* skip exception return */
+    pop		{r0-r3,r12,lr}  /* simulate register restor from stack */
+    pop		{pc}
+
+.size  ctx_switch, .-ctx_switch

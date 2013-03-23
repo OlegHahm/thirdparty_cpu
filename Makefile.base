@@ -1,0 +1,7 @@
+ifeq ($(CPU),stm32f407vgt6)
+ INCLUDES += -I$(RIOTCPU)/cortex-m/CMSIS/include/
+ INCLUDES += -I$(RIOTCPU)/cortex-m/CMSIS/Device/ST/STM32F4xx/include
+ INCLUDES += -I$(RIOTCPU)/cortex-m/STM32F4xx_StdPeriph_Driver/include
+ INCLUDES += -I$(RIOTCPU)/stm32f407vgt6/include/
+endif
+

@@ -1,0 +1,73 @@
+.syntax unified
+.cpu cortex-m4
+.thumb
+
+//.global ctx_switch
+//.global sched_switch_context_exit_ftw
+//.global SVC_Handler
+
+.section .text.SVC_Handler
+  .type  SVC_Handler, %function
+SVC_Handler:
+							/* {r0-r3,r12,LR,PC,xPSR} are saved automatically on exception entry */
+	push 	{r4-r11} 		/* save unsaved registers */
+	/*vstmdb	sp!, {s16-s31}	/* //FIXME save fpu registers if needed */
+	push 	{LR}			/* save exception return value */
+
+	ldr     r1, =sched_thread 	/* load address of currend pdc */
+	ldr     r1, [r1]		/* deref pdc */
+	str     sp, [r1]		/* write sp to pdc->sp means current threads stack pointer */
+
+	bl sched_run			/* call scheduler update sched_thread variable with pdc of next thread
+							/* the thread that has higest priority and is in PENDING state */
+
+	ldr     r0, =sched_thread  /* load address of currend pdc */
+	ldr     r0, [r0]        /* deref pdc */
+	ldr     sp, [r0]        /* load pdc->sp to sp register */
+
+	pop		{r0}			/* restore exception retrun value from stack */
+	/*pop		{s16-s31}		/* //FIXME load fpu register if needed depends on r0 exret */
+	pop		{r4-r11}		/* load unloaded register */
+
+	bx		r0				/* load exception return value to pc causes end of exception*/
+							/* {r0-r3,r12,LR,PC,xPSR} are resored automatically on exception return */
+.size  SVC_Handler, .-SVC_Handler
+
+.section .text.ctx_switch,"ax",%progbits
+
+ /* kernel functions */
+ctx_switch:
+    /* Save return address on stack */
+    /* stmfd   sp!, {lr} */
+
+    /* disable interrupts */
+    /* mov     lr, #NOINT|SVCMODE */
+    /* msr     CPSR_c, lr */
+	/* cpsid 	i */
+
+ctx_switch2:
+    /* save other register */
+    nop
+
+    mov r12, sp
+    stmfd r12!, {r4-r11}
+
+    /* save user mode stack pointer in *sched_thread */
+    ldr     r1, =sched_thread   /* r1 = &sched_thread */
+    ldr     r1, [r1]                /* r1 = *r1 = sched_thread */
+    str     r12, [r1]                /* store stack pointer in tasks pdc*/
+
+    /* call scheduler so sched_thread points to the next task */
+sched_switch_context_exit_ftw:
+    bl      sched_run
+sched_task_return:
+    /* load pdc->stackpointer in r0 */
+    ldr     r0, =sched_thread          /* r0 = &sched_thread */
+    ldr     r0, [r0]                /* r0 = *r0 = sched_thread */
+    ldr     sp, [r0]                /* sp = r0  restore stack pointer*/
+    pop		{r4}					/* skip exception return */
+    pop		{r4-r11}
+    pop		{r0-r3,r12,lr}  /* simulate register restor from stack */
+    pop		{pc}
+
+.size  ctx_switch, .-ctx_switch

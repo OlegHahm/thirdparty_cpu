@@ -278,9 +278,26 @@ int _read_r(struct _reent *r, int fd, void *buffer, unsigned int count)
 {
 	int result = -1;
 	r->_errno = EBADF;
+
+	switch(fd) {
+		case STDIN_FILENO:
+		{
+			/* Loop until ready to read */
+			while (USART_GetFlagStatus(USART2, USART_FLAG_RXNE) == RESET){}
+
+			((char*)buffer)[0] = USART_ReceiveData(USART2);
+
+			return 1;
+		}
+			break;
+
+		default:
 #ifdef MODULE_FAT
-	result = ff_read_r(r, fd, buffer, count);
+	        result = ff_read_r(r, fd, buffer, count);
 #endif
+            break;
+    }
+
 	return result;
 }
 /*---------------------------------------------------------------------------*/

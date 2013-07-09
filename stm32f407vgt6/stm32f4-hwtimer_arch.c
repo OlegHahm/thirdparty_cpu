@@ -302,43 +302,13 @@ void hwtimer_arch_init(void (*handler)(int), uint32_t fcpu) {
 /*---------------------------------------------------------------------------*/
 
 void hwtimer_arch_enable_interrupt(void) {
-	NVIC_InitTypeDef NVIC_InitStructure;
-	// Timer Interrupt konfigurieren
-	NVIC_InitStructure.NVIC_IRQChannel = TIM3_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0F;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0F;
-	NVIC_Init(&NVIC_InitStructure);
-	NVIC_InitStructure.NVIC_IRQChannel = TIM4_IRQn;
-	NVIC_Init(&NVIC_InitStructure);
-	NVIC_InitStructure.NVIC_IRQChannel = TIM6_DAC_IRQn;
-	NVIC_Init(&NVIC_InitStructure);
-	NVIC_InitStructure.NVIC_IRQChannel = TIM7_IRQn;
-	NVIC_Init(&NVIC_InitStructure);
-//	VICIntEnable = 1 << TIMER0_INT;	/* Enable Interrupt */
-//	VICIntEnable = 1 << TIMER1_INT;	/* Enable Interrupt */
-//	VICIntEnable = 1 << TIMER2_INT;	/* Enable Interrupt */
+	SYSTICK_CONTROL = SYSTICK_CONTROL_ENABLE | SYSTICK_CONTROL_TICKINT;
 }
 
 /*---------------------------------------------------------------------------*/
 
 void hwtimer_arch_disable_interrupt(void) {
-	NVIC_InitTypeDef NVIC_InitStructure;
-	// Timer Interrupt konfigurieren
-	NVIC_InitStructure.NVIC_IRQChannel = TIM3_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = DISABLE;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0F;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0F;
-	NVIC_Init(&NVIC_InitStructure);
-	NVIC_InitStructure.NVIC_IRQChannel = TIM4_IRQn;
-	NVIC_Init(&NVIC_InitStructure);
-	NVIC_InitStructure.NVIC_IRQChannel = TIM6_DAC_IRQn;
-	NVIC_Init(&NVIC_InitStructure);
-	NVIC_InitStructure.NVIC_IRQChannel = TIM7_IRQn;
-	NVIC_Init(&NVIC_InitStructure);
-//	VICIntEnClr = 1 << TIMER0_INT;	/* Disable Interrupt */
-//	VICIntEnClr = 1 << TIMER1_INT;	/* Disable Interrupt */
-//	VICIntEnClr = 1 << TIMER2_INT;	/* Disable Interrupt */
+	SYSTICK_CONTROL = SYSTICK_CONTROL_ENABLE;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -374,29 +344,8 @@ void hwtimer_arch_set_absolute(unsigned long value, short timer) {
 /*---------------------------------------------------------------------------*/
 
 void hwtimer_arch_unset(short timer) {
-	switch (timer) {
-		case 0: {
-			RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, DISABLE);
-			break;
-		}
-		case 1: {
-			RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, DISABLE);
-			break;
-		}
-		case 2: {
-			RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM6, DISABLE);
-			break;
-		}
-		case 3: {
-			RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM7, DISABLE);
-			break;
-		}
-	}
-/*	volatile unsigned long base = get_base_address(timer);
-	timer %= 4;
-	*VULP(base+TXMCR) &= ~(MR0I << (3 * timer));	// disable interrupt for match register
-	 *VULP(base+TXIR) = 0x01 << timer;				// reset interrupt register value for corresponding match register
-	 *VULP(base+TXIR) */
+    handler_enable = 0;
+    tick_remain = 0;
 }
 
 /*---------------------------------------------------------------------------*/

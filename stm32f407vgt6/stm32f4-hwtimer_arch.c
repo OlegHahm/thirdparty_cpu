@@ -42,12 +42,33 @@ and the mailinglist (subscription via web site)
  * @note		$Id: arm-hwtimer_arch.c 3861 2011-12-07 13:31:45Z hwill $
  *
  */
-
 #include "cpu.h"
 //#include "bitarithm.h"
 #include "hwtimer_cpu.h"
 #include "hwtimer_arch.h"
 //#include "arm_common.h"
+
+#define SYSTICK_CONTROL (*(uint32_t*) 0xE000E010)
+#define SYSTICK_RELOAD  (*(uint32_t*) 0xE000E014)
+#define SYSTICK_CURRENT (*(uint32_t*) 0xE000E018)
+
+#define SYSTICK_PASSED  (SYSTICK_RELOAD - SYSTICK_CURRENT)
+
+#define SYSTICK_CONTROL_ENABLE      (1 << 0)
+#define SYSTICK_CONTROL_TICKINT     (1 << 1)
+#define SYSTICK_CONTROL_CLKSOURCE   (1 << 2)
+#define SYSTICK_CONTROL_COUNTFLAG   (1 << 16)
+
+#define ICSR    (*(uint32_t*) 0xE000ED04)
+#define ICSR_PENDSTSET  (1 << 26)
+
+int handler_enable = 0;
+
+unsigned long tick_next_reload = 0;
+
+unsigned long tick_remain = 0;
+
+unsigned long tick_count;
 
 //#define VULP(x) ((volatile unsigned long*) (x))
 //
@@ -69,6 +90,53 @@ static void (*int_handler)(int);
 
 #include "sched.h"
 
+/**
+ * @brief   Adjust tick reload an remainder to fit HWTIMER_MAXTICKS
+ *
+ * @param[in,out] reload  Tick reload value.
+ * @param[in,out] remain  Remainder ticks.
+ */
+void next_reload_and_remain(uint32_t *reload, uint32_t *remain) {
+    if (*reload > HWTIMER_MAXTICKS) {
+        /* Prevent small interrupt interval */
+        if (*reload < (HWTIMER_MAXTICKS * 2)) {
+            *remain = *reload / 2;
+            *reload = *reload - *remain;
+        }
+        else {
+            *remain = *reload - HWTIMER_MAXTICKS;
+            *reload = HWTIMER_MAXTICKS;
+        }
+    }
+    else {
+        *remain = 0;
+    }
+}
+
+void SysTick_Handler(void) {
+    tick_count += tick_next_reload;
+
+    if (tick_remain) {
+        uint32_t offset = tick_remain;
+
+        next_reload_and_remain(&offset, &tick_remain);
+
+        // Subtract ticks from handler start to keep on time
+        SYSTICK_RELOAD = offset - 1 - SYSTICK_PASSED;
+        SYSTICK_CURRENT = 0;
+
+        tick_next_reload = offset;
+    }
+    else {
+        tick_next_reload = SYSTICK_RELOAD + 1;
+        SYSTICK_RELOAD = HWTIMER_MAXTICKS;
+
+        if (handler_enable) {
+            handler_enable = 0;
+            int_handler(0);
+        }
+    }
+}
 
 __attribute__((naked))
 void TIM3_IRQHandler(void) {
@@ -225,18 +293,10 @@ static void timer2_init(uint32_t cpsr) {
 }
 
 void hwtimer_arch_init(void (*handler)(int), uint32_t fcpu) {
-
- 	uint32_t cpsr;
 	int_handler = handler;
-	//TODO folgende Iimplementierung fehlerhaft:
-	cpu_clock_scale(fcpu, HWTIMER_SPEED, &cpsr);
-	/*only tim2 & tim5 are 32bit */
-//	timer0_init(cpsr);
-//	timer1_init(cpsr);
-	timer2_init(cpsr);		//for hwtimer_now();
-	// hardware timer 3 is used in several projects for special purpose 
-	// timer3_init(cpsr);
 
+	SYSTICK_RELOAD = HWTIMER_MAXTICKS;
+	SYSTICK_CONTROL = SYSTICK_CONTROL_ENABLE | SYSTICK_CONTROL_TICKINT;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -284,76 +344,31 @@ void hwtimer_arch_disable_interrupt(void) {
 /*---------------------------------------------------------------------------*/
 
 void hwtimer_arch_set(unsigned long offset, short timer) {
-	offset *= 10;	// due to compatibilty input is a count of 10us, so change it to 1us for calculation
-	/* TIMER clock enable - we have TIM2 to TIM7, because the other make use of APB2
-	 * TIM2 and TIM5 are 32-Bit */
-	switch(timer){
-		case 0: RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);break;
-		case 1: RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);break;
-		case 2: RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM6, ENABLE);break;
-		case 3: RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM7, ENABLE);break;
-	}
+    if (offset > 0) {
+        handler_enable = 1;
 
-	/* Time base configuration */
-	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
-	//TIM_TimeBaseStructure.TIM_Period = 100 - 1; // 1 MHz down to 10 KHz (0.1 ms)
-	TIM_TimeBaseStructure.TIM_Prescaler = offset*84 / 0xFFFF +1; /*1 msec reso*/ //cpsr; // Down to 1 MHz (adjust per your clock)
-	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;	//not relevant in this case
-	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-	TIM_TimeBaseStructure.TIM_Period = offset*84/TIM_TimeBaseStructure.TIM_Prescaler;;
-	TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
-	switch(timer){
-		case 0: {
-			TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
-			TIM_SelectOnePulseMode(TIM3,TIM_OPMode_Single);
-			TIM_ITConfig(TIM3,TIM_IT_Update,ENABLE);
-			/* enable counter */
-			TIM_Cmd(TIM3, ENABLE);
-			break;
-		}
-		case 1: {
-			TIM_TimeBaseInit(TIM4, &TIM_TimeBaseStructure);
-			TIM_SelectOnePulseMode(TIM4,TIM_OPMode_Single);
-			TIM_ITConfig(TIM4,TIM_IT_Update,ENABLE);
-			/* enable counter */
-			TIM_Cmd(TIM4, ENABLE);
-			break;
-		}
-		case 2: {
-			TIM_TimeBaseInit(TIM6, &TIM_TimeBaseStructure);
-			TIM_SelectOnePulseMode(TIM6,TIM_OPMode_Single);
-			TIM_ITConfig(TIM6,TIM_IT_Update,ENABLE);
-			/* enable counter */
-			TIM_Cmd(TIM6, ENABLE);
-			break;
-		}
-		case 3: {
-			TIM_TimeBaseInit(TIM7, &TIM_TimeBaseStructure);
-			TIM_SelectOnePulseMode(TIM7,TIM_OPMode_Single);
-			TIM_ITConfig(TIM7,TIM_IT_Update,ENABLE);
-			/* enable counter */
-			TIM_Cmd(TIM7, ENABLE);
-			break;
-		}
-	}
+        next_reload_and_remain(&offset, &tick_remain);
 
+        tick_count += SYSTICK_PASSED;
 
-	// Calculate base address of timer register
-	// Timer 0-3 are matched to TIMER0
-	// Timer 4-7 are matched to TIMER1
-	// Timer 8-11 are matched to TIMER2
-/*	volatile unsigned long base = get_base_address(timer);
-	// Calculate match register address of corresponding timer
-	timer %= 4;
-	unsigned long cpsr = disableIRQ();
-	volatile unsigned long* addr = VULP(base + TXMR0 + 4 * timer);
-	// Calculate match register value
-	unsigned long value = *VULP(base + TXTC) + offset;
-	*addr = value;									// set match register
-	*VULP(base+TXIR) = 0x01 << timer;				// reset interrupt register value for corresponding match register
-	*VULP(base+TXMCR) &= ~(7 << (3 * timer));		// Clear all bits
-	*VULP(base+TXMCR) |= (MR0I << (3 * timer));		// enable interrupt for match register
-	restoreIRQ(cpsr);*/
+        SYSTICK_RELOAD = offset - 1;
+        SYSTICK_CURRENT = 0;
+
+        tick_next_reload = offset;
+    }
+    else {
+        tick_next_reload = offset;
+        ICSR |= ICSR_PENDSTSET;
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
+void hwtimer_arch_set_absolute(unsigned long value, short timer) {
+    signed long offset = value - hwtimer_arch_now();
+    if (offset >= 0) {
+        hwtimer_arch_set(offset, timer);
+    }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -386,6 +401,11 @@ void hwtimer_arch_unset(short timer) {
 
 /*---------------------------------------------------------------------------*/
 
+/**
+ * @brief   Return hardware timer absolute tick count.
+ *
+ * @return  Hardware timer absolute tick count.
+ */
 unsigned long hwtimer_arch_now(void) {
-	return TIM_GetCounter(TIM2);
+	return (SYSTICK_RELOAD - SYSTICK_CURRENT) + tick_count;
 }

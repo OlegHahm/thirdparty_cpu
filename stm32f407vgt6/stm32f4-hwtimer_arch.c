@@ -43,10 +43,8 @@ and the mailinglist (subscription via web site)
  *
  */
 #include "cpu.h"
-//#include "bitarithm.h"
 #include "hwtimer_cpu.h"
 #include "hwtimer_arch.h"
-//#include "arm_common.h"
 
 #define SYSTICK_CONTROL (*(uint32_t*) 0xE000E010)
 #define SYSTICK_RELOAD  (*(uint32_t*) 0xE000E014)
@@ -70,25 +68,8 @@ unsigned long tick_remain = 0;
 
 unsigned long tick_count;
 
-//#define VULP(x) ((volatile unsigned long*) (x))
-//
 ///// High level interrupt handler
 static void (*int_handler)(int);
-
-//Only kept for testing purposes
-//void TIM3_IRQHandler(void) {
-//	TIM_ClearITPendingBit(TIM3, TIM_IT_Update );
-//	if (GPIO_ReadOutputDataBit(GPIOB, GPIO_Pin_1 )) {
-//		GPIO_WriteBit(GPIOB, GPIO_Pin_1, RESET);
-//		puts("i");
-//	} else {
-//		GPIO_WriteBit(GPIOB, GPIO_Pin_1, SET);
-//		puts("a");
-////		USART3_SendString("Test");
-//	}
-//}
-
-#include "sched.h"
 
 /**
  * @brief   Adjust tick reload an remainder to fit HWTIMER_MAXTICKS
@@ -112,6 +93,8 @@ void next_reload_and_remain(uint32_t *reload, uint32_t *remain) {
         *remain = 0;
     }
 }
+
+/*---------------------------------------------------------------------------*/
 
 void SysTick_Handler(void) {
     tick_count += tick_next_reload;
@@ -138,159 +121,7 @@ void SysTick_Handler(void) {
     }
 }
 
-__attribute__((naked))
-void TIM3_IRQHandler(void) {
-	save_context();
-
-	TIM_ClearITPendingBit(TIM3, TIM_IT_Update );
-//	TIM_Cmd(TIM3, DISABLE);
-	if(!(TIM3->CR1 & TIM_CR1_CEN)){
-		RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, DISABLE);
-		int_handler(0);
-	}
-
-	if(sched_context_switch_request)
-		{
-			// scheduler
-			sched_run();
-		}
-
-	restore_context();
-}
-
-__attribute__((naked))
-void TIM4_IRQHandler(void) {
-	save_context();
-
-	TIM_ClearITPendingBit(TIM4, TIM_IT_Update );
-//	TIM_Cmd(TIM3, DISABLE);
-	if(!(TIM4->CR1 & TIM_CR1_CEN)){
-		RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, DISABLE);
-		int_handler(1);
-	}
-
-	if(sched_context_switch_request)
-	{
-		// scheduler
-		sched_run();
-	}
-
-	restore_context();
-}
-
-__attribute__((naked))
-void TIM6_DAC_IRQHandler(void) {
-	save_context();
-
-	TIM_ClearITPendingBit(TIM6, TIM_IT_Update );
-//	TIM_Cmd(TIM3, DISABLE);
-	if(!(TIM6->CR1 & TIM_CR1_CEN)){
-		RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, DISABLE);
-		int_handler(2);
-	}
-
-	if(sched_context_switch_request)
-	{
-		// scheduler
-		sched_run();
-	}
-
-	restore_context();
-}
-
-__attribute__((naked))
-void TIM7_IRQHandler(void) {
-	save_context();
-
-	TIM_ClearITPendingBit(TIM7, TIM_IT_Update );
-//	TIM_Cmd(TIM3, DISABLE);
-	if(!(TIM7->CR1 & TIM_CR1_CEN)){
-		RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, DISABLE);
-		int_handler(3);
-	}
-
-	if(sched_context_switch_request)
-	{
-		// scheduler
-		sched_run();
-	}
-
-	restore_context();
-}
-
-
-//
-///// Timer 0-3 interrupt handler
-//static void timer_irq(void) __attribute__((interrupt("IRQ")));
-//
-//inline unsigned long get_base_address(short timer) {
-//	return (volatile unsigned long)(TMR0_BASE_ADDR + (timer / 8) * 0x6C000 + (timer/4 - (timer/8)*2) * 0x4000);
-//}
-//
-//static void timer_irq(void)
-//{
-//	short timer = 0;
-//	if (T0IR) {
-//		timer = 0;
-//	} else if (T1IR) {
-//		timer = 4;
-//	} else if (T2IR) {
-//		timer = 8;
-//	}
-//
-//	volatile unsigned long base = get_base_address(timer);
-//
-//    if (*VULP(base+TXIR) & BIT0) {
-//    	*VULP(base+TXMCR) &= ~BIT0;
-//    	*VULP(base+TXIR) = BIT0;
-//		int_handler(timer);
-//	}
-//	if (*VULP(base+TXIR) & BIT1) {
-//		*VULP(base+TXMCR) &= ~BIT3;
-//		*VULP(base+TXIR) = BIT1;
-//		int_handler(timer + 1);
-//	}
-//	if (*VULP(base+TXIR) & BIT2) {
-//		*VULP(base+TXMCR) &= ~BIT6;
-//		*VULP(base+TXIR) = BIT2;
-//		int_handler(timer + 2);
-//	}
-//	if (*VULP(base+TXIR) & BIT3) {
-//		*VULP(base+TXMCR) &= ~BIT9;
-//		*VULP(base+TXIR) = BIT3;
-//		int_handler(timer + 3);
-//	}
-//
-//	VICVectAddr = 0;	// acknowledge interrupt (if using VIC IRQ)
-//}
-
-//This procedure is used for 32-Bit permanent timer
-static void timer2_init(uint32_t cpsr) {
-//	PCONP |= PCTIM0;		// power up timer
-//	T0TCR = 2;				// disable and reset timer
-//	T0MCR = 0;				// disable compare
-//	T0CCR = 0;				// capture is disabled
-//	T0EMR = 0;				// no external match output
-//	T0PR = cpsr;			// set prescaler
-//	install_irq(TIMER0_INT, &timer_irq, 1);
-//	T0TCR = 1;				// reset counter
-	/* TIM2 clock enable */
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-	/* Time base configuration */
-	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
-	//TIM_TimeBaseStructure.TIM_Period = 100 - 1; // 1 MHz down to 10 KHz (0.1 ms)
-	TIM_TimeBaseStructure.TIM_Prescaler = 840 -1; /*1 msec reso*/ //cpsr; // Down to 1 MHz (adjust per your clock)
-	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;	//not relevant in this case
-	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-	TIM_TimeBaseStructure.TIM_Period = 0xFFFFFFFF;
-	TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
-	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
-	TIM_UpdateRequestConfig(TIM2,TIM_UpdateSource_Regular);
-//	TIM_ITConfig(TIM3,TIM_IT_Update,ENABLE);
-
-	/* TIM2 enable counter */
-	TIM_Cmd(TIM2, ENABLE);
-}
+/*---------------------------------------------------------------------------*/
 
 void hwtimer_arch_init(void (*handler)(int), uint32_t fcpu) {
 	int_handler = handler;

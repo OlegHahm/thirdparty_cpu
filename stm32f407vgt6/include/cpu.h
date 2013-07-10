@@ -49,6 +49,11 @@ __attribute__( ( always_inline ) ) static __INLINE void eINT(void)
 	__enable_irq();
 }
 
+__attribute__( ( always_inline ) ) static __INLINE void __pendSV(void)
+{
+	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+}
+
 
 __attribute__( ( always_inline ) ) static __INLINE void save_context(void)
 {

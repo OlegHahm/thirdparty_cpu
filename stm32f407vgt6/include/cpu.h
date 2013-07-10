@@ -39,26 +39,6 @@ and the mailinglist (subscription via web site)
 void thread_yield(void);
 void cpu_clock_scale(uint32_t source, uint32_t target, uint32_t* prescale);
 
-__attribute__( ( always_inline ) ) static __INLINE int inISR(void)
-{
-	return (__get_IPSR() & 0xFF);
-}
-
-__attribute__( ( always_inline ) ) static __INLINE unsigned int disableIRQ(void)
-{
-	// FIXME PRIMASK is the old CPSR (FAULTMASK ??? BASEPRI ???)
-	//PRIMASK lesen
-	unsigned int uiPriMask = __get_PRIMASK();
-	__disable_irq();
-	return uiPriMask;
-}
-
-__attribute__( ( always_inline ) ) static __INLINE void restoreIRQ(unsigned oldPRIMASK)
-{
-	//PRIMASK lesen setzen
-	 __set_PRIMASK(oldPRIMASK);
-}
-
 __attribute__( ( always_inline ) ) static __INLINE void dINT(void)
 {
 	__disable_irq();

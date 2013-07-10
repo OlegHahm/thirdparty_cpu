@@ -55,6 +55,14 @@ void thread_yield(void) {
 }
 
 __attribute__((naked))
+void PendSV_Handler(void)
+{
+    save_context();
+    sched_run();
+    restore_context();
+}
+
+__attribute__((naked))
 void SVC_Handler(void)
 {
 	save_context();

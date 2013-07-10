@@ -45,6 +45,7 @@ and the mailinglist (subscription via web site)
 #include <stdint.h>
 // core
 #include "kernel.h"
+#include "irq.h"
 // sys
 #include "lpm.h"
 //#include "tracelog.h"

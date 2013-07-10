@@ -43,6 +43,7 @@ and the mailinglist (subscription via web site)
  *
  */
 #include "cpu.h"
+#include "sched.h"
 #include "hwtimer_cpu.h"
 #include "hwtimer_arch.h"
 
@@ -118,6 +119,10 @@ void SysTick_Handler(void) {
             handler_enable = 0;
             int_handler(0);
         }
+    }
+
+    if (sched_context_switch_request) {
+        __pendSV();
     }
 }
 

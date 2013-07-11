@@ -42,82 +42,47 @@ and the mailinglist (subscription via web site)
  * @note		$Id: arm-hwtimer_arch.c 3861 2011-12-07 13:31:45Z hwill $
  *
  */
+
+#include "stm32f4xx.h"
 #include "cpu.h"
 #include "sched.h"
 #include "hwtimer_cpu.h"
 #include "hwtimer_arch.h"
 
-#define SYSTICK_CONTROL (*(uint32_t*) 0xE000E010)
-#define SYSTICK_RELOAD  (*(uint32_t*) 0xE000E014)
-#define SYSTICK_CURRENT (*(uint32_t*) 0xE000E018)
-
-#define SYSTICK_PASSED  (SYSTICK_RELOAD - SYSTICK_CURRENT)
-
-#define SYSTICK_CONTROL_ENABLE      (1 << 0)
-#define SYSTICK_CONTROL_TICKINT     (1 << 1)
-#define SYSTICK_CONTROL_CLKSOURCE   (1 << 2)
-#define SYSTICK_CONTROL_COUNTFLAG   (1 << 16)
-
-#define ICSR    (*(uint32_t*) 0xE000ED04)
-#define ICSR_PENDSTSET  (1 << 26)
-
-int handler_enable = 0;
-
-unsigned long tick_next_reload = 0;
-
-unsigned long tick_remain = 0;
-
-unsigned long tick_count;
-
 ///// High level interrupt handler
 static void (*int_handler)(int);
 
-/**
- * @brief   Adjust tick reload an remainder to fit HWTIMER_MAXTICKS
- *
- * @param[in,out] reload  Tick reload value.
- * @param[in,out] remain  Remainder ticks.
- */
-void next_reload_and_remain(uint32_t *reload, uint32_t *remain) {
-    if (*reload > HWTIMER_MAXTICKS) {
-        /* Prevent small interrupt interval */
-        if (*reload < (HWTIMER_MAXTICKS * 2)) {
-            *remain = *reload / 2;
-            *reload = *reload - *remain;
-        }
-        else {
-            *remain = *reload - HWTIMER_MAXTICKS;
-            *reload = HWTIMER_MAXTICKS;
-        }
-    }
-    else {
-        *remain = 0;
-    }
-}
+void (*TIM_SetCompare[])(TIM_TypeDef* TIMx, uint32_t Compare1) = {
+    TIM_SetCompare1,
+    TIM_SetCompare2,
+    TIM_SetCompare3,
+    TIM_SetCompare4
+};
 
-/*---------------------------------------------------------------------------*/
+uint16_t TIM_IT_CC[] = {
+    TIM_IT_CC1,
+    TIM_IT_CC2,
+    TIM_IT_CC3,
+    TIM_IT_CC4
+};
 
-void SysTick_Handler(void) {
-    tick_count += tick_next_reload;
+uint16_t TIM_Channel_[] = {
+    TIM_Channel_1,
+    TIM_Channel_2,
+    TIM_Channel_3,
+    TIM_Channel_4
+};
 
-    if (tick_remain) {
-        uint32_t offset = tick_remain;
+void TIM2_IRQHandler(void) {
+    int i;
 
-        next_reload_and_remain(&offset, &tick_remain);
+    for (i = 0; i < ARCH_MAXTIMERS; i++) {
+        if (TIM_GetITStatus(TIM2, TIM_IT_CC[i]) != RESET) {
+            int_handler(i);
 
-        // Subtract ticks from handler start to keep on time
-        SYSTICK_RELOAD = offset - 1 - SYSTICK_PASSED;
-        SYSTICK_CURRENT = 0;
-
-        tick_next_reload = offset;
-    }
-    else {
-        tick_next_reload = SYSTICK_RELOAD + 1;
-        SYSTICK_RELOAD = HWTIMER_MAXTICKS;
-
-        if (handler_enable) {
-            handler_enable = 0;
-            int_handler(0);
+            TIM_ClearITPendingBit(TIM2, TIM_IT_CC[i]);
+            TIM_ITConfig(TIM2, TIM_IT_CC[i], DISABLE);
+            TIM_CCxCmd(TIM2, TIM_Channel_[i], TIM_CCx_Disable);
         }
     }
 
@@ -126,62 +91,111 @@ void SysTick_Handler(void) {
     }
 }
 
-/*---------------------------------------------------------------------------*/
+uint32_t hwtimer_arch_prescale(uint32_t fcpu, uint32_t ftimer) {
+    switch(RCC->CFGR & RCC_CFGR_HPRE) {
+        case RCC_CFGR_HPRE_DIV512:  fcpu >>= 1;
+        case RCC_CFGR_HPRE_DIV256:  fcpu >>= 1;
+        case RCC_CFGR_HPRE_DIV128:  fcpu >>= 1;
+        case RCC_CFGR_HPRE_DIV64:   fcpu >>= 2;
+        case RCC_CFGR_HPRE_DIV16:   fcpu >>= 1;
+        case RCC_CFGR_HPRE_DIV8:    fcpu >>= 1;
+        case RCC_CFGR_HPRE_DIV4:    fcpu >>= 1;
+        case RCC_CFGR_HPRE_DIV2:    fcpu >>= 1;
+        case RCC_CFGR_HPRE_DIV1:
+        default: ;
+    }
+
+    switch(RCC->CFGR & RCC_CFGR_PPRE1) {
+        case RCC_CFGR_PPRE1_DIV16:  fcpu >>= 1;
+        case RCC_CFGR_PPRE1_DIV8:   fcpu >>= 1;
+        case RCC_CFGR_PPRE1_DIV4:   fcpu >>= 1;
+        case RCC_CFGR_PPRE1_DIV2:   fcpu >>= 1;
+                                    fcpu <<= 1; /* (APBx presc = 1) ? x1 : x2 */
+        case RCC_CFGR_PPRE1_DIV1:
+        default: ;
+    }
+
+    return fcpu / ftimer;
+}
 
 void hwtimer_arch_init(void (*handler)(int), uint32_t fcpu) {
-	int_handler = handler;
+ 	uint32_t cpsr;
 
-	SYSTICK_RELOAD = HWTIMER_MAXTICKS;
-	SYSTICK_CONTROL = SYSTICK_CONTROL_ENABLE | SYSTICK_CONTROL_TICKINT;
+	int_handler = handler;
+    cpsr = hwtimer_arch_prescale(fcpu, HWTIMER_SPEED);
+
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+	/* Time base configuration */
+	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
+	TIM_TimeBaseStructure.TIM_Period = HWTIMER_MAXTICKS; // 1 MHz down to 10 KHz (0.1 ms)
+	TIM_TimeBaseStructure.TIM_Prescaler = cpsr -1; /*1 msec reso*/ //cpsr; // Down to 1 MHz (adjust per your clock)
+	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;	//not relevant in this case
+	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+	TIM_TimeBaseStructure.TIM_Period = HWTIMER_MAXTICKS;
+	TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
+	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
+
+    TIM_OCInitTypeDef TIM_OCInitStruct;
+    TIM_OCInitStruct.TIM_OCMode = TIM_OCMode_Timing;
+    TIM_OCInitStruct.TIM_OutputState = TIM_OutputState_Disable;
+    TIM_OCInitStruct.TIM_Pulse = 0;
+    TIM_OCInitStruct.TIM_OCPolarity = TIM_OCPolarity_High;
+    TIM_OC1Init(TIM2, &TIM_OCInitStruct);
+    TIM_OC2Init(TIM2, &TIM_OCInitStruct);
+    TIM_OC3Init(TIM2, &TIM_OCInitStruct);
+    TIM_OC4Init(TIM2, &TIM_OCInitStruct);
+
+	NVIC_InitTypeDef NVIC_InitStructure;
+	NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0F;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0F;
+	NVIC_Init(&NVIC_InitStructure);
+
+	TIM_Cmd(TIM2, ENABLE);
 }
 
 /*---------------------------------------------------------------------------*/
 
 void hwtimer_arch_enable_interrupt(void) {
-	SYSTICK_CONTROL = SYSTICK_CONTROL_ENABLE | SYSTICK_CONTROL_TICKINT;
+	NVIC_InitTypeDef NVIC_InitStructure;
+	// Timer Interrupt konfigurieren
+	NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0F;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0F;
+	NVIC_Init(&NVIC_InitStructure);
 }
 
 /*---------------------------------------------------------------------------*/
 
 void hwtimer_arch_disable_interrupt(void) {
-	SYSTICK_CONTROL = SYSTICK_CONTROL_ENABLE;
+	NVIC_InitTypeDef NVIC_InitStructure;
+	// Timer Interrupt konfigurieren
+	NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = DISABLE;
+	NVIC_Init(&NVIC_InitStructure);
 }
 
 /*---------------------------------------------------------------------------*/
 
 void hwtimer_arch_set(unsigned long offset, short timer) {
-    if (offset > 0) {
-        handler_enable = 1;
-
-        next_reload_and_remain(&offset, &tick_remain);
-
-        tick_count += SYSTICK_PASSED;
-
-        SYSTICK_RELOAD = offset - 1;
-        SYSTICK_CURRENT = 0;
-
-        tick_next_reload = offset;
-    }
-    else {
-        tick_next_reload = offset;
-        ICSR |= ICSR_PENDSTSET;
-    }
+	hwtimer_arch_set_absolute(offset + TIM_GetCounter(TIM2), timer);
 }
 
 /*---------------------------------------------------------------------------*/
 
 void hwtimer_arch_set_absolute(unsigned long value, short timer) {
-    signed long offset = value - hwtimer_arch_now();
-    if (offset >= 0) {
-        hwtimer_arch_set(offset, timer);
-    }
+    TIM_SetCompare[timer](TIM2, value);
+    TIM_ITConfig(TIM2, TIM_IT_CC[timer], ENABLE);
+    TIM_CCxCmd(TIM2, TIM_Channel_[timer], TIM_CCx_Enable);
 }
 
 /*---------------------------------------------------------------------------*/
 
 void hwtimer_arch_unset(short timer) {
-    handler_enable = 0;
-    tick_remain = 0;
+    TIM_ITConfig(TIM2, TIM_IT_CC[timer], DISABLE);
+    TIM_CCxCmd(TIM2, TIM_Channel_[timer], TIM_CCx_Disable);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -192,5 +206,5 @@ void hwtimer_arch_unset(short timer) {
  * @return  Hardware timer absolute tick count.
  */
 unsigned long hwtimer_arch_now(void) {
-	return (SYSTICK_RELOAD - SYSTICK_CURRENT) + tick_count;
+	return TIM_GetCounter(TIM2);
 }

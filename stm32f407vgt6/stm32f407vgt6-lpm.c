@@ -4,6 +4,8 @@
  *  Created on: 09.08.2012
  *      Author: pfeiffer
  */
+#include "stm32f4xx.h"
+
 #include <stdio.h>
 #include <stdint.h>
 #include "lpm.h"
@@ -20,6 +22,9 @@ enum lpm_mode lpm_set(enum lpm_mode target) {
 	if( target == LPM_IDLE )
 	{
 
+	}
+	else if (target == LPM_SLEEP) {
+        __WFI();
 	}
 	/* calculate target mcu power mode */
 

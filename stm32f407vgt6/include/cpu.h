@@ -28,7 +28,7 @@ and the mailinglist (subscription via web site)
 #define __CPU_H
 
 /**
- * @defgroup	
+ * @defgroup
  * @ingroup		cpu
  * @{
  */
@@ -39,19 +39,19 @@ and the mailinglist (subscription via web site)
 
 void thread_yield(void);
 
-__attribute__( ( always_inline ) ) static __INLINE void dINT(void)
+__attribute__((always_inline)) static __INLINE void dINT(void)
 {
-	__disable_irq();
+    __disable_irq();
 }
 
-__attribute__( ( always_inline ) ) static __INLINE void eINT(void)
+__attribute__((always_inline)) static __INLINE void eINT(void)
 {
-	__enable_irq();
+    __enable_irq();
 }
 
-__attribute__( ( always_inline ) ) static __INLINE void __pendSV(void)
+__attribute__((always_inline)) static __INLINE void __pendSV(void)
 {
-	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+    SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 }
 
 /** @} */

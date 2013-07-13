@@ -46,8 +46,8 @@ void cpu_clock_scale(uint32_t source, uint32_t target, uint32_t* prescale) {
 }
 
 void cpu_switch_context_exit(void){
-    sched_run();
-    sched_task_return();
+    __pendSV();
+    __enable_irq();
 }
 
 void thread_yield(void) {

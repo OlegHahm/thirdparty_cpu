@@ -58,17 +58,21 @@ __attribute__( ( always_inline ) ) static __INLINE void __pendSV(void)
 __attribute__( ( always_inline ) ) static __INLINE void save_context(void)
 {
 	/* {r0-r3,r12,LR,PC,xPSR} are saved automatically on exception entry */
-	asm("push 	{r4-r11}");
-	/* save unsaved registers */
-	/*vstmdb	sp!, {s16-s31}	*/ //FIXME save fpu registers if needed
-	asm("push 	{LR}");
-	/* save exception return value */
 
 	asm("ldr     r1, =active_thread");
 	/* load address of currend pdc */
 	asm("ldr     r1, [r1]");
 	/* deref pdc */
-	asm("str     sp, [r1]");
+	asm("cmp    r1, #0");
+	/* active_thread exists */
+	asm("ittt   ne");
+	/*if active_thread != NULL */
+	asm("pushne 	{r4-r11}");
+	/* save unsaved registers */
+	/*vstmdb	sp!, {s16-s31}	*/ //FIXME save fpu registers if needed
+	asm("pushne 	{LR}");
+	/* save exception return value */
+	asm("strne     sp, [r1]");
 	/* write sp to pdc->sp means current threads stack pointer */
 }
 

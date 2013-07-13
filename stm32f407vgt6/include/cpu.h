@@ -34,10 +34,10 @@ and the mailinglist (subscription via web site)
  */
 
 #include <stdbool.h>
+
 #include "stm32f407vgt6.h"
 
 void thread_yield(void);
-void cpu_clock_scale(uint32_t source, uint32_t target, uint32_t* prescale);
 
 __attribute__( ( always_inline ) ) static __INLINE void dINT(void)
 {
@@ -53,21 +53,6 @@ __attribute__( ( always_inline ) ) static __INLINE void __pendSV(void)
 {
 	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 }
-
-
-
-
-//extern uintptr_t __stack_start;		///< end of user stack memory space
-
-/*
-#define SYSMON_STACKPTR		({ register void* __stack_ptr;				\
-		__asm__ __volatile__ ( "mov %0, sp" : "=r" (__stack_ptr) );		\
-		__stack_ptr; })
-#define SYSMON_STACKSTART	(&__stack_start)
-*/
-
-//void lpc2387_pclk_scale(uint32_t source, uint32_t target, uint32_t* pclksel, uint32_t* prescale);
-//bool install_irq( int IntNumber, void *HandlerAddr, int Priority );
 
 /** @} */
 #endif /* __CPU_H */

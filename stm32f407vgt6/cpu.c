@@ -51,7 +51,7 @@ void cpu_switch_context_exit(void){
 }
 
 void thread_yield(void) {
-	asm("svc 0x01\n");
+    __pendSV();
 }
 
 __attribute__((naked))
@@ -60,16 +60,6 @@ void PendSV_Handler(void)
     save_context();
     sched_run();
     restore_context();
-}
-
-__attribute__((naked))
-void SVC_Handler(void)
-{
-	save_context();
-	asm("bl sched_run");
-	/* call scheduler update active_thread variable with pdc of next thread
-	 * the thread that has higest priority and is in PENDING state */
-	restore_context();
 }
 
  /* kernel functions */

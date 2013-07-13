@@ -78,11 +78,11 @@ void TIM2_IRQHandler(void) {
 
     for (i = 0; i < ARCH_MAXTIMERS; i++) {
         if (TIM_GetITStatus(TIM2, TIM_IT_CC[i]) != RESET) {
-            int_handler(i);
-
             TIM_ClearITPendingBit(TIM2, TIM_IT_CC[i]);
             TIM_ITConfig(TIM2, TIM_IT_CC[i], DISABLE);
             TIM_CCxCmd(TIM2, TIM_Channel_[i], TIM_CCx_Disable);
+
+            int_handler(i);
         }
     }
 

@@ -12,22 +12,23 @@
 
 static enum lpm_mode lpm;
 
-enum lpm_mode lpm_set(enum lpm_mode target) {
-	enum lpm_mode last_lpm = lpm;
+enum lpm_mode lpm_set(enum lpm_mode target)
+{
+    enum lpm_mode last_lpm = lpm;
 
-	if( target == LPM_IDLE )
-	{
+    if (target == LPM_IDLE) {
 
-	}
-	else if (target == LPM_SLEEP) {
+    }
+    else if (target == LPM_SLEEP) {
         __WFI();
-	}
+    }
 
-	lpm = target;
+    lpm = target;
 
-	return last_lpm;
+    return last_lpm;
 }
 
-void lpm_awake(void) {
-	lpm = LPM_ON;
+void lpm_awake(void)
+{
+    lpm = LPM_ON;
 }

@@ -8,7 +8,37 @@
 #include "stdint.h"
 #include "stm32f4xx_tim.h"
 
-void stm32f4_pclk_scale(uint32_t source, uint32_t target, uint32_t *pclksel, uint32_t *prescale)
+int inISR(void)
+{
+	return (__get_IPSR() & 0xFF);
+}
+
+unsigned int disableIRQ(void)
+{
+	// FIXME PRIMASK is the old CPSR (FAULTMASK ??? BASEPRI ???)
+	//PRIMASK lesen
+	unsigned int uiPriMask = __get_PRIMASK();
+	__disable_irq();
+	return uiPriMask;
+}
+
+void restoreIRQ(unsigned oldPRIMASK)
+{
+	//PRIMASK lesen setzen
+	 __set_PRIMASK(oldPRIMASK);
+}
+
+void dINT(void)
+{
+	__disable_irq();
+}
+
+void eINT(void)
+{
+	__enable_irq();
+}
+
+void stm32f4_pclk_scale(uint32_t source, uint32_t target, uint32_t* pclksel, uint32_t* prescale)
 {
     uint32_t pclkdiv;
     *prescale = source / target;

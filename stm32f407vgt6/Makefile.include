@@ -1,0 +1,9 @@
+### Minimal setup
+ifeq ($(CPU),stm32f407vgt6)
+    export USEMODULE += stm32f4xxstdperi
+    export UNDEF += $(BINDIR)syscalls.o
+    export INCLUDES += -I$(RIOTCPU)/cortex-m/CMSIS/include/
+    export INCLUDES += -I$(RIOTCPU)/cortex-m/CMSIS/Device/ST/STM32F4xx/include
+    export INCLUDES += -I$(RIOTCPU)/cortex-m/STM32F4xx_StdPeriph_Driver/include
+    export INCLUDES += -I$(RIOTCPU)/stm32f407vgt6/include/
+endif

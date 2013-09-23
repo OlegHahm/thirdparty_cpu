@@ -290,6 +290,10 @@ void hwtimer_arch_disable_interrupt(void)
 }
 
 /*---------------------------------------------------------------------------*/
+void hwtimer_arch_set_absolute(unsigned long value, short timer)
+{
+#warning hwtimer_arch_set_absolute not implemented
+}
 
 void hwtimer_arch_set(unsigned long offset, short timer)
 {

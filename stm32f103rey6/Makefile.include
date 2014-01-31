@@ -1,0 +1,8 @@
+
+INCLUDES += -Iinclude
+INCLUDES += -I$(RIOTCPU)/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/CMSIS/Include
+INCLUDES += -I$(RIOTCPU)/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x
+INCLUDES += -I$(RIOTCPU)/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/STM32F10x_StdPeriph_Driver/inc
+INCLUDES += -I$(RIOTBASE)/core/include -I$(RIOTBASE)/sys/include -I$(RIOTBASE)/sys/lib 
+
+

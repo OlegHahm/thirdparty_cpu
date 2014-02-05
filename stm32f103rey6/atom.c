@@ -79,8 +79,8 @@ void sched_task_return(void)
     asm("ldr     r0, [r0]"); /* r0 = *r0 = active_thread */
     asm("ldr     sp, [r0]"); /* sp = r0  restore stack pointer*/
     asm("pop		{r4}"); /* skip exception return */
-    asm(" pop		{r4-r11}");
-    asm(" pop		{r0-r3,r12,lr}"); /* simulate register restor from stack */
+    asm("pop		{r4-r11}");
+    asm("pop		{r0-r3,r12,lr}"); /* simulate register restor from stack */
     //	asm("pop 		{r4}"); /*foo*/
     //
 
@@ -136,7 +136,7 @@ char *thread_stack_init(void *task_func, void *stack_start, int stack_size)
     *stk = (unsigned int) 0x01000200;
 
     //program counter
-    stk--;
+    tk--;
     *stk = (unsigned int) task_func;
     printf("task_func %x\n", task_func);
 

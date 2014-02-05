@@ -24,17 +24,17 @@ enum lpm_mode lpm_set(enum lpm_mode target)
 
     /* calculate target mcu power mode */
 
-    //	if( target == LPM_IDLE )
+    //	if ( target == LPM_IDLE )
     //		target_flags = PM_IDLE;
-    //	else if( target == LPM_SLEEP )
+    //	else if ( target == LPM_SLEEP )
     //		target_flags = PM_SLEEP;
-    //	else if( target == LPM_POWERDOWN )
+    //	else if ( target == LPM_POWERDOWN )
     //		target_flags = PM_POWERDOWN;
     //	else
     //		target_flags = 0;
     //
     //
-    //	if(target > LPM_IDLE){
+    //	if (target > LPM_IDLE){
     //		// Disconnect PLL
     //
     //		PLLCON &= ~0x0002;
@@ -55,7 +55,7 @@ void lpm_awake(void)
 #if LPM_DEBUG
     unsigned long usec = RTC_CTC;
 #endif
-    //	if( (lpm >= LPM_SLEEP) | ( ~PLLSTAT & (BIT24 | BIT25 | BIT25) )) {	// wake up from deep sleep & detect loss of PLL connection
+    //	if ( (lpm >= LPM_SLEEP) | ( ~PLLSTAT & (BIT24 | BIT25 | BIT25) )) {	// wake up from deep sleep & detect loss of PLL connection
     //		//benchmark
     //		init_clks1();
     //		init_clks2();

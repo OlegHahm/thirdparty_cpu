@@ -41,9 +41,9 @@ and the mailinglist (subscription via web site)
  * @author    Freie Universität Berlin, Computer Systems & Telematics, FeuerWhere project
  * @author		baar
  * @author    Alaeddine Weslati <alaeddine.weslati@intia.fr>
- * @version   
+ * @version
  *
- * 
+ *
  */
 #define TRANSCEIVER_BUFFER_SIZE (3)
 

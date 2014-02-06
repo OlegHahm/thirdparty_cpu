@@ -28,7 +28,7 @@ and the mailinglist (subscription via web site)
 #define __CPU_H
 
 /**
- * @defgroup	
+ * @defgroup
  * @ingroup		cpu
  * @{
  */
@@ -37,56 +37,56 @@ and the mailinglist (subscription via web site)
 #include "stm32f103rey6.h"
 
 void thread_yield(void);
-void cpu_clock_scale(uint32_t source, uint32_t target, uint32_t* prescale);
+void cpu_clock_scale(uint32_t source, uint32_t target, uint32_t *prescale);
 
-__attribute__( ( always_inline ) ) __INLINE int inISR(void);
+__attribute__((always_inline)) __INLINE int inISR(void);
 
-__attribute__( ( always_inline ) ) __INLINE unsigned int disableIRQ(void);
+__attribute__((always_inline)) __INLINE unsigned int disableIRQ(void);
 
-__attribute__( ( always_inline ) ) __INLINE void restoreIRQ(unsigned oldPRIMASK);
+__attribute__((always_inline)) __INLINE void restoreIRQ(unsigned oldPRIMASK);
 
-__attribute__( ( always_inline ) ) __INLINE void dINT(void)
+__attribute__((always_inline)) __INLINE void dINT(void)
 {
-  __disable_irq();
+    __disable_irq();
 }
 
-__attribute__( ( always_inline ) ) __INLINE void eINT(void)
+__attribute__((always_inline)) __INLINE void eINT(void)
 {
-  __enable_irq();
+    __enable_irq();
 }
 
-__attribute__( ( always_inline ) ) __INLINE void save_context(void)
+__attribute__((always_inline)) __INLINE void save_context(void)
 {
-	/* {r0-r3,r12,LR,PC,xPSR} are saved automatically on exception entry */
-	asm("push 	{r4-r11}");
-	/* save unsaved registers */
-	asm("push 	{LR}");
-	/* save exception return value */
+    /* {r0-r3,r12,LR,PC,xPSR} are saved automatically on exception entry */
+    asm("push 	{r4-r11}");
+    /* save unsaved registers */
+    asm("push 	{LR}");
+    /* save exception return value */
 
-	asm("ldr     r1, =active_thread");
-	/* load address of currend pdc */
-	asm("ldr     r1, [r1]");
-	/* deref pdc */
-	asm("str     sp, [r1]");
-	/* write sp to pdc->sp means current threads stack pointer */
+    asm("ldr     r1, =active_thread");
+    /* load address of currend pdc */
+    asm("ldr     r1, [r1]");
+    /* deref pdc */
+    asm("str     sp, [r1]");
+    /* write sp to pdc->sp means current threads stack pointer */
 }
 
-__attribute__( ( always_inline ) ) __INLINE void restore_context(void)
+__attribute__((always_inline)) __INLINE void restore_context(void)
 {
-	asm("ldr     r0, =active_thread");
-	/* load address of currend pdc */
-	asm("ldr     r0, [r0]");
-	/* deref pdc */
-	asm("ldr     sp, [r0]");
-	/* load pdc->sp to sp register */
+    asm("ldr     r0, =active_thread");
+    /* load address of currend pdc */
+    asm("ldr     r0, [r0]");
+    /* deref pdc */
+    asm("ldr     sp, [r0]");
+    /* load pdc->sp to sp register */
 
-	asm("pop		{r0}");
-	/* restore exception retrun value from stack */
-	asm("pop		{r4-r11}");
-	/* load unloaded register */
-//	asm("pop 		{r4}"); /*foo*/
-	asm("bx		r0");				/* load exception return value to pc causes end of exception*/
-							/* {r0-r3,r12,LR,PC,xPSR} are restored automatically on exception return */
+    asm("pop		{r0}");
+    /* restore exception retrun value from stack */
+    asm("pop		{r4-r11}");
+    /* load unloaded register */
+    //	asm("pop 		{r4}"); /*foo*/
+    asm("bx		r0");				/* load exception return value to pc causes end of exception*/
+    /* {r0-r3,r12,LR,PC,xPSR} are restored automatically on exception return */
 }
 
 /** @} */

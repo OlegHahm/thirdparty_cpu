@@ -1,8 +1,18 @@
-/*
- * cpu.c
+/**
+ * Copyright (C) 2014 Freie Universität Berlin
  *
- *  Created on: 07.09.2012
- *      Author: pfeiffer
+ * This file subject to the terms and conditions of the GNU Lesser General
+ * Public License. See the file LICENSE in the top level directory for more
+ * details.
+ */
+
+/**
+ * @ingroup stm32f407vgt6
+ * @{
+ * @file    cpu.c
+ * @author  Stefan Pfeiffer <stefan.pfeiffer@fu-berlin.de>
+ * @author  Oliver Hahm <oliver.hahm@inria.fr>
+ * @}
  */
 
 #include "stdint.h"

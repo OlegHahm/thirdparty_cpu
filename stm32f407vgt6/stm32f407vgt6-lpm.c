@@ -1,9 +1,19 @@
-/*
- * stm32f407vgt6-lpm.c
+/**
+ * Copyright (C) 2014 Freie Universität Berlin
  *
- *  Created on: 09.08.2012
- *      Author: pfeiffer
+ * This file subject to the terms and conditions of the GNU Lesser General
+ * Public License. See the file LICENSE in the top level directory for more
+ * details.
  */
+
+/**
+ * @ingroup stm32f407vgt6
+ * @{
+ * @file    stm32f407vgt6-lpm.c
+ * @author  Stefan Pfeiffer <stefan.pfeiffer@fu-berlin.de>
+ * @}
+ */
+
 #include <stdio.h>
 #include <stdint.h>
 #include "lpm.h"

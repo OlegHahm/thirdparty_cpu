@@ -22,11 +22,11 @@ void sched_task_return(void);
 
 unsigned int atomic_set_return(unsigned int *p, unsigned int uiVal)
 {
-    //unsigned int cspr = disableIRQ();		//crashes
+    //unsigned int cspr = disableIRQ();     //crashes
     dINT();
     unsigned int uiOldVal = *p;
     *p = uiVal;
-    //restoreIRQ(cspr);						//crashes
+    //restoreIRQ(cspr);                     //crashes
     eINT();
     return uiOldVal;
 }

@@ -138,7 +138,7 @@ char *thread_stack_init(void *task_func, void *stack_start, int stack_size)
     *stk = (unsigned int) 0x01000200;
 
     //program counter
-    tk--;
+    stk--;
     *stk = (unsigned int) task_func;
     printf("task_func %x\n", task_func);
 

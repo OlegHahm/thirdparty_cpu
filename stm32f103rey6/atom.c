@@ -4,6 +4,8 @@
  *  Created on: 10.08.2012
  *      Author: pfeiffer
  */
+#include <stdio.h>
+
 #include "sched.h"
 #include "cpu.h"
 
@@ -69,8 +71,8 @@ void ctx_switch(void)
     sched_task_return();
 }
 /* call scheduler so active_thread points to the next task */
-extern void main();
-extern void auto_init();
+extern void main(void);
+extern void auto_init(void);
 int xxx;
 void sched_task_return(void)
 {

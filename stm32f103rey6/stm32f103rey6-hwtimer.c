@@ -1,10 +1,10 @@
 #include <cpu.h>
 #include <sched.h>
-#include <debug.h>
 
 #include "board.h"
 
-#define DEBUG
+#define ENABLE_DEBUG    (0)
+#include "debug.h"
 
 static void (*int_handler)(int);
 

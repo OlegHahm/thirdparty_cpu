@@ -156,7 +156,7 @@ void hwtimer_arch_disable_interrupt(void)
 
 void hwtimer_arch_set_absolute(unsigned long value, short timer)
 {
-    uint32_t TIMx;
+    TIM_TypeDef* TIMx;
 
     uint16_t prescaler;
     uint16_t period;

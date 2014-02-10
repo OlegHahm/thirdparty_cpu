@@ -140,7 +140,7 @@ char *thread_stack_init(void *task_func, void *stack_start, int stack_size)
     //program counter
     stk--;
     *stk = (unsigned int) task_func;
-    printf("task_func %x\n", task_func);
+    printf("task_func %p\n", task_func);
 
     /* link register */
     stk--;

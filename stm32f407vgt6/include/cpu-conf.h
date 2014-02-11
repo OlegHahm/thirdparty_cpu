@@ -74,6 +74,10 @@ and the mailinglist (subscription via web site)
 #define KERNEL_CONF_STACKSIZE_IDLE		500
 /** @} */
 
+#define TRANSCEIVER_BUFFER_SIZE         (10)
+
+#define UART0_BUFSIZE                   (128)
+
 /**
  * @name Compiler specifics
  * @{

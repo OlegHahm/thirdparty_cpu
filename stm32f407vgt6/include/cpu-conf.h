@@ -67,8 +67,10 @@ and the mailinglist (subscription via web site)
  * @name Kernel configuration
  * @{
  */
+#define KERNEL_CONF_STACKSIZE_PRINTF    (4096)
+
 #ifndef KERNEL_CONF_STACKSIZE_DEFAULT
-#define KERNEL_CONF_STACKSIZE_DEFAULT	2500
+#define KERNEL_CONF_STACKSIZE_DEFAULT	(512)
 #endif
 
 #define KERNEL_CONF_STACKSIZE_IDLE		500

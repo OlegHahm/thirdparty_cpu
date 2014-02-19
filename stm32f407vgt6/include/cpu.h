@@ -39,38 +39,17 @@ and the mailinglist (subscription via web site)
 void thread_yield(void);
 void cpu_clock_scale(uint32_t source, uint32_t target, uint32_t *prescale);
 
-__attribute__((always_inline)) static __INLINE int inISR(void)
-{
-    return (__get_IPSR() & 0xFF);
-}
+int inISR(void);
 
-__attribute__((always_inline)) static __INLINE unsigned int disableIRQ(void)
-{
-    // FIXME PRIMASK is the old CPSR (FAULTMASK ??? BASEPRI ???)
-    //PRIMASK lesen
-    unsigned int uiPriMask = __get_PRIMASK();
-    __disable_irq();
-    return uiPriMask;
-}
+unsigned int disableIRQ(void);
 
-__attribute__((always_inline)) static __INLINE void restoreIRQ(unsigned oldPRIMASK)
-{
-    //PRIMASK lesen setzen
-    __set_PRIMASK(oldPRIMASK);
-}
+void restoreIRQ(unsigned oldPRIMASK);
 
-__attribute__((always_inline)) static __INLINE void dINT(void)
-{
-    __disable_irq();
-}
+void dINT(void);
 
-__attribute__((always_inline)) static __INLINE void eINT(void)
-{
-    __enable_irq();
-}
+void eINT(void);
 
-
-__attribute__((always_inline)) static __INLINE void save_context(void)
+__attribute__( ( always_inline ) ) __INLINE void save_context(void)
 {
     /* {r0-r3,r12,LR,PC,xPSR} are saved automatically on exception entry */
     asm("push 	{r4-r11}");
@@ -87,7 +66,7 @@ __attribute__((always_inline)) static __INLINE void save_context(void)
     /* write sp to pdc->sp means current threads stack pointer */
 }
 
-__attribute__((always_inline)) static __INLINE void restore_context(void)
+__attribute__( ( always_inline ) ) __INLINE void restore_context(void)
 {
     asm("ldr     r0, =active_thread");
     /* load address of currend pdc */

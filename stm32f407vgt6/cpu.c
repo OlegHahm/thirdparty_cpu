@@ -15,8 +15,12 @@
  * @}
  */
 
+#include "sched.h"
+#include "cpu.h"
 #include "stdint.h"
 #include "stm32f4xx_tim.h"
+
+static void sched_task_return(void);
 
 int inISR(void)
 {
@@ -131,7 +135,7 @@ void ctx_switch(void)
     sched_task_return();
 }
 /* call scheduler so active_thread points to the next task */
-void sched_task_return(void)
+static void sched_task_return(void)
 {
     /* load pdc->stackpointer in r0 */
     asm("ldr     r0, =active_thread"); /* r0 = &active_thread */

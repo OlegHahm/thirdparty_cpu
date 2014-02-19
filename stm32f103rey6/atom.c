@@ -4,6 +4,8 @@
  *  Created on: 10.08.2012
  *      Author: pfeiffer
  */
+#include <stdio.h>
+
 #include "sched.h"
 #include "cpu.h"
 
@@ -69,8 +71,8 @@ void ctx_switch(void)
     sched_task_return();
 }
 /* call scheduler so active_thread points to the next task */
-extern void main();
-extern void auto_init();
+extern void main(void);
+extern void auto_init(void);
 int xxx;
 void sched_task_return(void)
 {
@@ -136,9 +138,9 @@ char *thread_stack_init(void *task_func, void *stack_start, int stack_size)
     *stk = (unsigned int) 0x01000200;
 
     //program counter
-    tk--;
+    stk--;
     *stk = (unsigned int) task_func;
-    printf("task_func %x\n", task_func);
+    printf("task_func %p\n", task_func);
 
     /* link register */
     stk--;

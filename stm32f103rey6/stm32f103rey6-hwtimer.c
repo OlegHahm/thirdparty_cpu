@@ -1,10 +1,10 @@
 #include <cpu.h>
 #include <sched.h>
-#include <debug.h>
 
 #include "board.h"
 
-#define DEBUG
+#define ENABLE_DEBUG    (0)
+#include "debug.h"
 
 static void (*int_handler)(int);
 
@@ -156,7 +156,7 @@ void hwtimer_arch_disable_interrupt(void)
 
 void hwtimer_arch_set_absolute(unsigned long value, short timer)
 {
-    uint32_t TIMx;
+    TIM_TypeDef* TIMx;
 
     uint16_t prescaler;
     uint16_t period;

@@ -4,8 +4,8 @@
  *  Created on: 07.09.2012
  *      Author: pfeiffer
  */
-
-#include "stdint.h"
+#include <stdio.h>
+#include <stdint.h>
 #include "stm32f10x_tim.h"
 
 int inISR(void)

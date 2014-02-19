@@ -45,12 +45,12 @@ __attribute__((always_inline)) __INLINE unsigned int disableIRQ(void);
 
 __attribute__((always_inline)) __INLINE void restoreIRQ(unsigned oldPRIMASK);
 
-__attribute__((always_inline)) __INLINE void dINT(void)
+__attribute__((always_inline)) __INLINE static void dINT(void)
 {
     __disable_irq();
 }
 
-__attribute__((always_inline)) __INLINE void eINT(void)
+__attribute__((always_inline)) __INLINE static void eINT(void)
 {
     __enable_irq();
 }

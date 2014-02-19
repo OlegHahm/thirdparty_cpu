@@ -78,8 +78,6 @@ and the mailinglist (subscription via web site)
 #define KERNEL_CONF_STACKSIZE_PRINTF  (256)
 #define KERNEL_CONF_STACKSIZE_PRINTF_FLOAT (KERNEL_CONF_STACKSIZE_PRINTF)
 
-#define TRANSCEIVER_BUFFER_SIZE         (10)
-
 #define UART0_BUFSIZE                   (128)
 
 /** @} */

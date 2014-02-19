@@ -39,11 +39,11 @@ and the mailinglist (subscription via web site)
 void thread_yield(void);
 void cpu_clock_scale(uint32_t source, uint32_t target, uint32_t *prescale);
 
-__attribute__((always_inline)) __INLINE int inISR(void);
+int inISR(void);
 
-__attribute__((always_inline)) __INLINE unsigned int disableIRQ(void);
+unsigned int disableIRQ(void);
 
-__attribute__((always_inline)) __INLINE void restoreIRQ(unsigned oldPRIMASK);
+void restoreIRQ(unsigned oldPRIMASK);
 
 __attribute__((always_inline)) __INLINE static void dINT(void)
 {

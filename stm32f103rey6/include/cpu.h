@@ -58,35 +58,27 @@ __attribute__((always_inline)) __INLINE static void eINT(void)
 __attribute__((always_inline)) __INLINE void save_context(void)
 {
     /* {r0-r3,r12,LR,PC,xPSR} are saved automatically on exception entry */
-    asm("push 	{r4-r11}");
-    /* save unsaved registers */
-    asm("push 	{LR}");
-    /* save exception return value */
 
-    asm("ldr     r1, =active_thread");
-    /* load address of currend pdc */
-    asm("ldr     r1, [r1]");
-    /* deref pdc */
-    asm("str     sp, [r1]");
-    /* write sp to pdc->sp means current threads stack pointer */
+    /* save unsaved registers */
+    asm("mrs    r0, psp"            );      // get stack pointer from user mode
+    asm("stmdb  r0!,{r4-r11}"       );      // save regs
+    asm("stmdb  r0!,{lr}"           );      // exception return value
+//  asm("vstmdb sp!, {s16-s31}"     );      // FIXME save fpu registers if needed
+    asm("ldr    r1, =active_thread" );      /* load address of currend tcb */
+    asm("ldr    r1, [r1]"           );      /* deref pdc */
+    asm("str    r0, [r1]"           );      /* write r0 to pdc->sp means current threads stack pointer */
 }
 
 __attribute__((always_inline)) __INLINE void restore_context(void)
 {
-    asm("ldr     r0, =active_thread");
-    /* load address of currend pdc */
-    asm("ldr     r0, [r0]");
-    /* deref pdc */
-    asm("ldr     sp, [r0]");
-    /* load pdc->sp to sp register */
-
-    asm("pop		{r0}");
-    /* restore exception retrun value from stack */
-    asm("pop		{r4-r11}");
-    /* load unloaded register */
-    //	asm("pop 		{r4}"); /*foo*/
-    asm("bx		r0");				/* load exception return value to pc causes end of exception*/
-    /* {r0-r3,r12,LR,PC,xPSR} are restored automatically on exception return */
+    asm("ldr    r0, =active_thread" );      /* load address of currend tcb */
+    asm("ldr    r0, [r0]"           );      /* deref tcb */
+    asm("ldr    r1, [r0]"           );      /* load tcb->sp to register 1 */
+    asm("ldmia  r1!, {r0}"          );      /* restore exception retrun value from stack */
+//  asm("pop    {s16-s31}"          );      /* FIXME load fpu register if needed depends on r0 exret */
+    asm("ldmia  r1!, {r4-r11}"      );      /* restore other registers */
+    asm("msr    psp, r1"            );      /* restore PSP register (user mode sp)*/
+    asm("bx     r0"                 );      /* load exception return value to pc causes end of exception*/
 }
 
 /** @} */

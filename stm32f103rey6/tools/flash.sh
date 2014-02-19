@@ -1,6 +1,11 @@
 #!/bin/bash
 
-FILE=$(readlink -f "$0")
+if [ -L "$0" ]; then
+    FILE=$(readlink "$0")
+else
+    FILE="$0"
+fi
+
 BIN_FOLDER=$(dirname "${FILE}")
 
 openocd -f "${BIN_FOLDER}/iot-lab_m3_jtag.cfg" \

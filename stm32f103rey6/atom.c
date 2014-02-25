@@ -32,18 +32,29 @@ void cpu_switch_context_exit(void)
 
 void thread_yield(void)
 {
-    asm("svc 0x01\n");
+    SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;    // set PendSV Bit
 }
 
-
-__attribute__((naked))
-void SVC_Handler(void)
+__attribute__((naked))void PendSV_Handler(void)
 {
     save_context();
+    /* call scheduler update fk_thread variable with pdc of next thread  */
     asm("bl sched_run");
-    /* call scheduler update active_thread variable with pdc of next thread
-     * the thread that has higest priority and is in PENDING state */
+    /* the thread that has higest priority and is in PENDING state */
     restore_context();
+}
+
+    __attribute__((naked))
+void SVC_Handler(void)
+{
+    /* {r0-r3,r12,LR,PC,xPSR} are saved automatically on exception entry */
+    //    asm("push   {LR}");
+    /* save exception return value */
+    SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+    //
+    //    asm("pop    {r0}"               );      /* restore exception retrun value from stack */
+    asm("bx     LR"                 );      /* load exception return value to pc causes end of exception*/
+    /* {r0-r3,r12,LR,PC,xPSR} are restored automatically on exception return */
 }
 
 /* kernel functions */

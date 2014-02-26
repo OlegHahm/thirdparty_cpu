@@ -44,12 +44,14 @@ and the mailinglist (subscription via web site)
 #include <sys/stat.h>
 #include <sys/unistd.h>
 #include <stdint.h>
-// core
+#include <sys/time.h>
+
 #include "kernel.h"
-// sys
 #include "lpm.h"
-//#include "tracelog.h"
-//#include "hal-syscalls.h"
+
+#ifdef MODULE_VTIMER
+#include "vtimer.h"
+#endif
 
 /* When using the HAL standard in and out are handled by HAL
    devices. */
@@ -335,6 +337,14 @@ int _kill_r(struct _reent *r, int pid, int sig)
     r->_errno = ESRCH;		// no such process
     return -1;
 }
+#ifdef MODULE_VTIMER
+int _gettimeofday(struct timeval *tp, void *restrict tzp) {
+    (void) tzp;
+    vtimer_gettimeofday(tp);
+    return 0;
+}
+#endif
+
 /*---------------------------------------------------------------------------*/
 void _init(void) {}
 void _fini(void) {}

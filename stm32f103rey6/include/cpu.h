@@ -36,6 +36,11 @@ and the mailinglist (subscription via web site)
 #include <stdbool.h>
 #include "stm32f103rey6.h"
 
+typedef enum {
+    HARD_FAULT,
+    WATCHDOG
+} panic_t;
+
 void thread_yield(void);
 void cpu_clock_scale(uint32_t source, uint32_t target, uint32_t *prescale);
 

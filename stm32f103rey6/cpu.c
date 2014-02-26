@@ -9,8 +9,12 @@
 #include "stm32f10x_tim.h"
 #include "attributes.h"
 #include "kernel.h"
+#include "crash.h"
 
 #include "board_uart0.h"
+
+extern void sched_task_exit(void);
+void sched_task_return(void);
 
 int inISR(void)
 {
@@ -36,9 +40,7 @@ void restoreIRQ(unsigned oldPRIMASK)
 __attribute__((naked))
 void HardFault_Handler(void)
 {
-    thread_print_all();
-    puts("HARD FAULT");
-    reboot();
+    core_panic(HARD_FAULT, "HARD FAULT");
 
     while (1);
 }
@@ -74,39 +76,155 @@ NORETURN void reboot(void)
     }
 }
 
-/**
-  * @brief  This function handles USART1 global interrupt request.
-  * @param  None
-  * @retval None
-  */
-void USART1_IRQHandler(void)
+void cpu_switch_context_exit(void)
 {
-    interrupt_entry();
-    if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
-    {
-        /* Read one byte from the receive data register */
+    sched_run();
+    sched_task_return();
+}
 
-#ifdef MODULE_UART0
-        if (uart0_handler_pid) {
-            int c = USART_ReceiveData(USART1);
-            uart0_handle_incoming(c);
 
-            uart0_notify_thread();
-        }
-#endif
-        /* Disable the USART1 Receive interrupt */
-        //USART_ITConfig(USART1, USART_IT_RXNE, DISABLE);
+void thread_yield(void)
+{
+    SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;    // set PendSV Bit
+}
+
+__attribute__((naked))void PendSV_Handler(void)
+{
+    save_context();
+    /* call scheduler update fk_thread variable with pdc of next thread  */
+    asm("bl sched_run");
+    /* the thread that has higest priority and is in PENDING state */
+    restore_context();
+}
+
+    __attribute__((naked))
+void SVC_Handler(void)
+{
+    /* {r0-r3,r12,LR,PC,xPSR} are saved automatically on exception entry */
+    //    asm("push   {LR}");
+    /* save exception return value */
+    SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+    //
+    //    asm("pop    {r0}"               );      /* restore exception retrun value from stack */
+    asm("bx     LR"                 );      /* load exception return value to pc causes end of exception*/
+    /* {r0-r3,r12,LR,PC,xPSR} are restored automatically on exception return */
+}
+
+/* kernel functions */
+void ctx_switch(void)
+{
+    /* Save return address on stack */
+    /* stmfd   sp!, {lr} */
+
+    /* disable interrupts */
+    /* mov     lr, #NOINT|SVCMODE */
+    /* msr     CPSR_c, lr */
+    /* cpsid 	i */
+
+    /* save other register */
+    asm("nop");
+
+    asm("mov r12, sp");
+    asm("stmfd r12!, {r4-r11}");
+
+    /* save user mode stack pointer in *active_thread */
+    asm("ldr     r1, =active_thread"); /* r1 = &active_thread */
+    asm("ldr     r1, [r1]"); /* r1 = *r1 = active_thread */
+    asm("str     r12, [r1]"); /* store stack pointer in tasks pdc*/
+
+    sched_task_return();
+}
+/* call scheduler so active_thread points to the next task */
+void sched_task_return(void)
+{
+    /* switch to user mode use PSP insteat of MSP in ISR Mode*/
+    CONTROL_Type mode;
+    mode.w = __get_CONTROL();
+    mode.b.SPSEL = 1; // select PSP
+    mode.b.nPRIV = 0; // privilege
+    __set_CONTROL(mode.w);
+    /* load pdc->stackpointer in r0 */
+    asm("ldr     r0, =active_thread"); /* r0 = &active_thread */
+    asm("ldr     r0, [r0]"); /* r0 = *r0 = active_thread */
+    asm("ldr     sp, [r0]"); /* sp = r0  restore stack pointer*/
+    asm("pop		{r4}"); /* skip exception return */
+    asm("pop		{r4-r11}");
+    asm("pop		{r0-r3,r12,lr}"); /* simulate register restor from stack */
+    asm("pop		{pc}");
+}
+/*
+ * cortex m4 knows stacks and handles register backups
+ *
+ * so use different stack frame layout
+ *
+ *
+ * with float storage
+ * ------------------------------------------------------------------------------------------------------------------------------------
+ * | R0 | R1 | R2 | R3 | LR | PC | xPSR | S0 | S1 | S2 | S3 | S4 | S5 | S6 | S7 | S8 | S9 | S10 | S11 | S12 | S13 | S14 | S15 | FPSCR |
+ * ------------------------------------------------------------------------------------------------------------------------------------
+ *
+ * without
+ *
+ * --------------------------------------
+ * | R0 | R1 | R2 | R3 | LR | PC | xPSR |
+ * --------------------------------------
+ *
+ *
+ */
+char *thread_stack_init(void *task_func, void *stack_start, int stack_size)
+{
+    unsigned int *stk;
+    stk = (unsigned int *)(stack_start + stack_size);
+
+    /* marker */
+    stk--;
+    *stk = 0x77777777;
+
+    //FIXME FPSCR
+    stk--;
+    *stk = (unsigned int) 0;
+
+    //S0 - S15
+    for (int i = 15; i >= 0; i--) {
+        stk--;
+        *stk = i;
     }
 
-    if(USART_GetITStatus(USART1, USART_IT_TXE) != RESET)
-    {
-        /* Write one byte to the transmit data register */
+    //FIXME xPSR
+    stk--;
+    *stk = (unsigned int) 0x01000200;
 
-        /* Disable the USART1 Transmit interrupt */
-        USART_ITConfig(USART1, USART_IT_TXE, DISABLE);
+    //program counter
+    stk--;
+    *stk = (unsigned int) task_func;
+
+    /* link register */
+    stk--;
+    *stk = (unsigned int) 0x0;
+
+    /* r12 */
+    stk--;
+    *stk = (unsigned int) 0;
+
+    /* r0 - r3 */
+    for (int i = 3; i >= 0; i--) {
+        stk--;
+        *stk = i;
     }
-    if (sched_context_switch_request) {
-        thread_yield();
+
+    /* r11 - r4 */
+    for (int i = 11; i >= 4; i--) {
+        stk--;
+        *stk = i;
     }
-    interrupt_return();
+
+    /* foo */
+    /*stk--;
+    *stk = (unsigned int) 0xDEADBEEF;*/
+
+    /* lr means exception return code  */
+    stk--;
+    *stk = (unsigned int) 0xfffffffd; // return to taskmode main stack pointer
+
+    return (char *) stk;
 }

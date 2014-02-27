@@ -69,8 +69,11 @@ __attribute__((always_inline)) __INLINE void save_context(void)
     asm("stmdb  r0!,{r4-r11}"       );      // save regs
     asm("stmdb  r0!,{lr}"           );      // exception return value
 //  asm("vstmdb sp!, {s16-s31}"     );      // FIXME save fpu registers if needed
+    /* load address of currend pdc */
     asm("ldr    r1, =active_thread" );      /* load address of currend tcb */
+    /* deref pdc */
     asm("ldr    r1, [r1]"           );      /* deref pdc */
+    /* write r0 to pdc->sp means current threads stack pointer */
     asm("str    r0, [r1]"           );      /* write r0 to pdc->sp means current threads stack pointer */
 }
 
@@ -84,6 +87,21 @@ __attribute__((always_inline)) __INLINE void restore_context(void)
     asm("ldmia  r1!, {r4-r11}"      );      /* restore other registers */
     asm("msr    psp, r1"            );      /* restore PSP register (user mode sp)*/
     asm("bx     r0"                 );      /* load exception return value to pc causes end of exception*/
+}
+
+__attribute__( ( always_inline ) ) static __INLINE void interrupt_entry(void)
+{
+	/* {r0-r3,r12,LR,PC,xPSR} are saved automatically on exception entry */
+	asm("push 	{LR}");
+	/* save exception return value */
+}
+
+__attribute__( ( always_inline ) ) static __INLINE void interrupt_return(void)
+{
+	asm("pop		{r0}");
+	/* restore exception retrun value from stack */
+	asm("bx		r0"); /* load exception return value to pc causes end of exception*/
+	/* {r0-r3,r12,LR,PC,xPSR} are restored automatically on exception return */
 }
 
 /** @} */

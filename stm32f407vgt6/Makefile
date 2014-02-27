@@ -8,6 +8,8 @@ ifneq (,$(findstring cpu_drivers,$(USEMODULE)))
     DIRS += drivers
 endif
 
+DIRS += $(RIOTCPU)/cortex_common
+
 all: $(BINDIR)$(MODULE).a
 	@for i in $(DIRS) ; do "$(MAKE)" -C $$i ; done ;
 

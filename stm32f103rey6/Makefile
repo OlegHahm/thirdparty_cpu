@@ -7,7 +7,8 @@ ifneq (,$(findstring cpu_drivers,$(USEMODULE)))
 endif
 
 DIRS += $(RIOTCPU)/STM32F10x_StdPeriph_Lib_V3.5.0
-#
+DIRS += $(RIOTCPU)/cortex_common
+
 all: $(BINDIR)$(MODULE).a
 	@for i in $(DIRS) ; do "$(MAKE)" -C $$i ; done ;
 #

@@ -4,7 +4,7 @@
 
 #include "board.h"
 
-#define ENABLE_DEBUG    (1)
+#define ENABLE_DEBUG    (0)
 #include "debug.h"
 
 static void (*int_handler)(int);

@@ -48,6 +48,7 @@ and the mailinglist (subscription via web site)
 
 #include "kernel.h"
 #include "lpm.h"
+#include "io.h"
 
 #ifdef MODULE_VTIMER
 #include "vtimer.h"
@@ -72,7 +73,6 @@ and the mailinglist (subscription via web site)
 #endif
 
 #include "stm32f10x.h"
-#include "stm32f10x_usart.h"
 
 /**
  * @name Heaps (defined in linker script)
@@ -253,22 +253,8 @@ int _write_r(struct _reent *r, int fd, const void *data, unsigned int count)
             else if (hal_state == HAL_NOT_INITIALIZED) {
                 result = fw_puts((char *)data, count);
             }
-
 #else
-            //FIXME impl fw_puts
-
-
-            char *chars = (char *) data;
-
-            for (int i = 0; i < count; i++) {
-                USART_SendData(USART1, chars[i]);
-
-                /* Loop until the end of transmission */
-                while (USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET) {}
-            }
-
-            return count;
-            //result = fw_puts((char*)data, count);
+            result = fw_puts((char*) data, count);
 #endif
         }
         break;

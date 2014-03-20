@@ -42,6 +42,8 @@ __attribute__ ((naked)) void USART1_IRQHandler(void)
 
             uart0_notify_thread();
         }
+#else
+        (void)c;
 #endif
     }
     if (sched_context_switch_request) {

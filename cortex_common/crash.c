@@ -58,6 +58,7 @@ NORETURN void core_panic(int crash_code, const char *message)
     }
 #else
     /* DEVELHELP not set => reboot system */
-    reboot();
+    /* use dummy mode until used */
+    reboot(1);
 #endif
 }

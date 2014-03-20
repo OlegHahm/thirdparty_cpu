@@ -69,8 +69,9 @@ void WWDG_Handler(void)
     while (1);
 }
 
-NORETURN void reboot(void)
+int reboot(int mode)
 {
+    (void)mode;
     while (1) {
         NVIC_SystemReset();
     }

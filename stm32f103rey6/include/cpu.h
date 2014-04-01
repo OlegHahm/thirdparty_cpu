@@ -34,7 +34,10 @@ and the mailinglist (subscription via web site)
  */
 
 #include <stdbool.h>
+#include <string.h>
 #include "stm32f103rey6.h"
+
+#define GET_CPU_ID(id)          memcpy(&id, (void *)(0x1ffff7e8), CPU_ID_LEN)
 
 typedef enum {
     HARD_FAULT,

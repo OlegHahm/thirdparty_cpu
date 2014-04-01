@@ -92,8 +92,9 @@ and the mailinglist (subscription via web site)
 #define CC_CONF_WARN_UNUSED_RESULT		__attribute__((warn_unused_result))
 /** @} */
 
-#define CPU_ID_ADDR     (0x1ffff7e8)
-#define CPU_ID_LEN      (12)
+#define CPU_ID_LEN              (12)
+#define CPU_ID_EUI64_START      (4)
+#define CPU_ID_RADDR_START      (8)
 
 /** @} */
 #endif /* CPUCONF_H_ */

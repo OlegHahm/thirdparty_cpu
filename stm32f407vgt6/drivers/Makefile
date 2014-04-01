@@ -1,2 +1,2 @@
 MODULE =cpu_drivers
-include $(MAKEBASE)/Makefile.base
+include $(RIOTBASE)/Makefile.base

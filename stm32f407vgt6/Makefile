@@ -13,7 +13,7 @@ DIRS += $(RIOTCPU)/cortex_common
 all: $(BINDIR)$(MODULE).a
 	@for i in $(DIRS) ; do "$(MAKE)" -C $$i ; done ;
 
-include $(MAKEBASE)/Makefile.base
+include $(RIOTBASE)/Makefile.base
 
 clean::
 	@for i in $(DIRS) ; do "$(MAKE)" -C $$i clean ; done ;

@@ -73,7 +73,7 @@ __attribute__((always_inline)) __INLINE void save_context(void)
     asm("stmdb  r0!,{lr}"           );      // exception return value
 //  asm("vstmdb sp!, {s16-s31}"     );      // FIXME save fpu registers if needed
     /* load address of currend pdc */
-    asm("ldr    r1, =active_thread" );      /* load address of currend tcb */
+    asm("ldr    r1, =sched_active_thread" );/* load address of currend tcb */
     /* deref pdc */
     asm("ldr    r1, [r1]"           );      /* deref pdc */
     /* write r0 to pdc->sp means current threads stack pointer */
@@ -82,7 +82,7 @@ __attribute__((always_inline)) __INLINE void save_context(void)
 
 __attribute__((always_inline)) __INLINE void restore_context(void)
 {
-    asm("ldr    r0, =active_thread" );      /* load address of currend tcb */
+    asm("ldr    r0, =sched_active_thread" );/* load address of currend tcb */
     asm("ldr    r0, [r0]"           );      /* deref tcb */
     asm("ldr    r1, [r0]"           );      /* load tcb->sp to register 1 */
     asm("ldmia  r1!, {r0}"          );      /* restore exception retrun value from stack */

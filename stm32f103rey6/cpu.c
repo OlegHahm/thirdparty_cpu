@@ -128,9 +128,9 @@ void ctx_switch(void)
     asm("mov r12, sp");
     asm("stmfd r12!, {r4-r11}");
 
-    /* save user mode stack pointer in *active_thread */
-    asm("ldr     r1, =active_thread"); /* r1 = &active_thread */
-    asm("ldr     r1, [r1]"); /* r1 = *r1 = active_thread */
+    /* save user mode stack pointer in *sched_active_thread */
+    asm("ldr     r1, =sched_active_thread"); /* r1 = &sched_active_thread */
+    asm("ldr     r1, [r1]"); /* r1 = *r1 = sched_active_thread */
     asm("str     r12, [r1]"); /* store stack pointer in tasks pdc*/
 
     sched_task_return();
@@ -145,8 +145,8 @@ void sched_task_return(void)
     mode.b.nPRIV = 0; // privilege
     __set_CONTROL(mode.w);
     /* load pdc->stackpointer in r0 */
-    asm("ldr     r0, =active_thread"); /* r0 = &active_thread */
-    asm("ldr     r0, [r0]"); /* r0 = *r0 = active_thread */
+    asm("ldr     r0, =sched_active_thread"); /* r0 = &sched_active_thread */
+    asm("ldr     r0, [r0]"); /* r0 = *r0 = sched_active_thread */
     asm("ldr     sp, [r0]"); /* sp = r0  restore stack pointer*/
     asm("pop		{r4}"); /* skip exception return */
     asm("pop		{r4-r11}");

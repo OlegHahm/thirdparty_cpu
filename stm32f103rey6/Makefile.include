@@ -6,4 +6,5 @@ INCLUDES += -I$(RIOTCPU)/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/STM32F10x_StdP
 INCLUDES += -I$(RIOTBASE)/core/include -I$(RIOTBASE)/sys/include -I$(RIOTBASE)/sys/lib 
 
 export USEMODULE += cortex_common
+export USEMODULE += periph
 

@@ -127,5 +127,7 @@ void timer_irq_disable(tim_t dev);
  */
 void timer_reset(tim_t dev);
 
+int timer_set_absolute(tim_t dev, int channel, unsigned int timeout);
+
 #endif /* __TIMER_H */
 /** @} */

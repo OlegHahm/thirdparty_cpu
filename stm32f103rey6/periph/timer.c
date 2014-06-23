@@ -143,6 +143,41 @@ int timer_set(tim_t dev, int channel, unsigned int timeout)
     return 0;
 }
 
+int timer_set_absolute(tim_t dev, int channel, unsigned int timeout)
+{
+    // int now = timer_read(dev);
+    TIM_TypeDef *timer = NULL;
+    switch (dev) {
+        case TIMER_0:
+            timer = TIMER_0_DEV;
+            break;
+        case TIMER_1:
+            timer = TIMER_1_DEV;
+            break;
+        default:
+            return -1;
+    }
+    DEBUG("set timer %i to %i\n", channel-1, timeout);
+    switch (channel) {
+        case 1:
+            TIM_SetCompare1(timer, timeout - 1);
+            TIM_ITConfig(timer, TIM_IT_CC1, ENABLE);
+            break;
+        case 2:
+            TIM_SetCompare2(timer, timeout - 1);
+            TIM_ITConfig(timer, TIM_IT_CC2, ENABLE);
+            break;
+        case 3:
+            TIM_SetCompare3(timer, timeout - 1);
+            TIM_ITConfig(timer, TIM_IT_CC3, ENABLE);
+            break;
+        case 4:
+            TIM_SetCompare4(timer, timeout - 1);
+            TIM_ITConfig(timer, TIM_IT_CC4, ENABLE);
+            break;
+    }
+    return 0;
+}
 
 int timer_clear(tim_t dev, int channel)
 {

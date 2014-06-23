@@ -201,7 +201,7 @@ char *thread_stack_init(void *task_func, void *stack_start, int stack_size)
 
     /* link register */
     stk--;
-    *stk = (unsigned int) 0x0;
+    *stk = (unsigned int) sched_task_exit;
 
     /* r12 */
     stk--;
